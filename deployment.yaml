@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: casskop
+  labels:
+    app: casskop
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: casskop
+  template:
+    metadata:
+      labels:
+        app: casskop
+    spec:
+      serviceAccountName: rook-cassandra-operator
+      containers:
+        - name: casskop
+          image: siddhudon/casskop:v5
+          ports:
+            - containerPort: 80
