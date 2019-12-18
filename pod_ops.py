@@ -21,7 +21,6 @@ def create_custom_resource_object(namespace,json_file_path):
         return ("Exception when calling CustomObjectsApi->create_namespaced_custom_object: %s\n" % e)
 
 def delete_custom_resource_object(namespace, json_file_path):
-    #config.load_kube_config()
     config.load_incluster_config()
     configuration = client.Configuration()
     api_instance = client.CustomObjectsApi(client.ApiClient(configuration))
@@ -29,19 +28,18 @@ def delete_custom_resource_object(namespace, json_file_path):
     version = 'v1alpha1' # str | The custom resource's version
     plural = 'clusters' # str | The custom resource's plural name. For TPRs this would be lowercase plural kind.
     pretty = 'true'
-    name = 'cassandra.rook.io'
+    name = 'rook-cassandra'
+    body = client.V1DeleteOptions()
 
-    with open(json_file_path,'r') as jfile:
-        data = json.load(jfile)
     try:
-        api_response = api_instance.delete_namespaced_custom_object(group, version, namespace, plural, name, body=data)
+        api_response = api_instance.delete_namespaced_custom_object(group, version, namespace, plural, name, body)
         return api_response
     except ApiException as e:
         return ("Exception when calling CustomObjectsApi->delete_namespaced_custom_object: %s\n" % e)
 
 def get_nodes_info(namespace):
-    config.load_incluster_config()
-    #config.load_kube_config()
+    config.load_kube_config()
+    #config.load_incluster_config()
     configuration = client.Configuration()
     api_instance = client.CoreV1Api(client.ApiClient(configuration))
     allow_watch_bookmarks = True 
@@ -62,4 +60,5 @@ def get_nodes_info(namespace):
         return "Exception when calling CoreV1Api->list_node: %s\n" % e
 if __name__=="__main__":
     print(create_custom_resource_object('rook-cassandra','sample.json'))
-    #print(delete_custom_resource_object('rook-cassandra', 'sample.json'))
+    print(delete_custom_resource_object('rook-cassandra', 'sample.json'))
+

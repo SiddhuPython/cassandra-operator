@@ -10,11 +10,11 @@
     "mode": "cassandra",
     "annotations": null,
     "datacenter": {
-      "name": "cassandra",
+      "name": "dc2",
       "racks": [
         {
-          "name": "cassandra",
-          "members": 3,
+          "name": "rc2",
+          "members": 2,
           "storage": {
             "volumeClaimTemplates": [
               {

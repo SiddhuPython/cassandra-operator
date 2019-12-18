@@ -13,7 +13,7 @@ WORKDIR /app
 RUN pip3 install -r requirements.txt
 
 RUN apt-get update \
- && apt-get install -y curl 
+ && apt-get install -y curl vim
 
 COPY . /app
 
@@ -21,6 +21,5 @@ RUN curl -LO https://storage.googleapis.com/kubernetes-release/release/`curl -s 
     chmod +x ./kubectl && \
     mv ./kubectl /usr/local/bin/kubectl
 
-ENTRYPOINT [ "python3" ]
-
-CMD [ "app.py" ]
+ENV PORT 8080
+CMD ["gunicorn", "app:app", "--config=config.py" ]
