@@ -69,8 +69,6 @@ table, th, td {
   <form style="border: 1px solid darkblack;width: 400px; padding: 20px;" >
     
 	<div class="form-group">
-	 <label for="cluster_name">Cluster Name:</label>
-      <input type="text" class="form-control" style="width: 300px;" id="cluster_name" placeholder="Enter cluster name" name="cluster_name">
         <label for="data_center">Data Center Name:</label>
       <input type="text" class="form-control" style="width: 300px;" id="data_center" placeholder="Enter data center name" name="data_center">
          <label for="data_center">Namespace Name:</label>
@@ -112,7 +110,6 @@ table, th, td {
           });
 		  
 function showTableData() {
- var clusterName=document.getElementById('cluster_name').value;
  var dataCenter=document.getElementById('data_center').value;
  var nameSpace=document.getElementById('name_space').value;
  var rackName=document.getElementById('rack_name').value;
@@ -120,25 +117,24 @@ function showTableData() {
  var cpu=document.getElementById('cpu').value;
  var memory=document.getElementById('memory').value;
  var url='http://127.0.0.1:8080/api/resource'
+
 	fetch(url, {
   method: 'post',
   headers: {
     'Accept': 'application/json, text/plain, */*',
     'Content-Type': 'application/json'
   },
-  body: JSON.stringify({'cluster_name':clusterName, 'data_center_name': dataCenter, 'name_space': nameSpace, 'rack_name' : rackName, 'rack_members'
+  body: JSON.stringify({'data_center_name': dataCenter, 'name_space': nameSpace, 'rack_name' : rackName, 'rack_members'
   :rackMembers, 'cpu':cpu, 'memory':memory})
 }).then(res=>res.json())
   .then(res => console.log(res));
   model.style.display = "none";
-location.reload(); 
 };
-
 var clustersInfo = '';
-var col = [];
+
 	function getValue(){
 	const Http = new XMLHttpRequest();
-	Http.open("GET", "http://127.0.0.1:8080/api/cluster_info?namespace=rook-cassandra");
+	Http.open("GET", "http://127.0.0.1:8080/api/cluster_info");
 	Http.send();
 	Http.onreadystatechange = (e) => {
 	var jsonstr=JSON.parse(Http.responseText);
@@ -156,9 +152,9 @@ var col = [];
 			
 			// retrieve column header ('Name', 'Email', and 'Mobile')
 
-			var colName = ["Cluster Name","Action"]; // define an empty array
-			
-			for (var i = 0; i < noOfContacts; i++) {
+			var colName = ["Cluster Name","Status","Action"]; // define an empty array
+			var col = [];
+			for (var i = 1; i < noOfContacts; i++) {
 				for (var key in clustersInfo[i]) {
 					if (col.indexOf(key) === -1) {
 						col.push(key);
@@ -198,11 +194,8 @@ var col = [];
 					}
 					var cn=clustersInfo[i][col[0]];
 					var td1 = document.createElement("td");
-					td1.innerHTML = '<button type="button" id="btndelete' + i +'" class="btn btn-default btn-xs" onclick="deleteCluster('+ i +')" >Delete </button>';
-						//+ '<button type="button" id="btnscaleup' + i +'" class="btn btn-default btn-xs" onclick="scaleUpCluster()" >Scale Up </button>'
-						//+'<button type="button" id="btnscaledown' + i +'" class="btn btn-default btn-xs" onclick="scaleDownCluster()" >Scale Down </button>'
-					bRow.appendChild(td1);
-					
+					td1.innerHTML = '<button type="button" id="btn' + i +'" class="btn btn-default" onclick="deleteCluster('+cn+')" >Delete cluster</button>'
+						bRow.appendChild(td1);
 					tBody.appendChild(bRow)
 
 			}
@@ -218,24 +211,11 @@ var col = [];
 	}
 
 }
- function deleteCluster(pn){
-var clName=clustersInfo[pn][col[0]];
-
-	const Http = new XMLHttpRequest();
-	Http.open("DELETE", "http://127.0.0.1:8080/api/delete?cluster_name="+clName);
-	Http.send();
-	location.reload(); 
- 	alert('Cluster "'+clName+'" deleted successfully.');
+ function deleteCluster(cn){
+	 alert('I am here.'+cn);
  }
- 
- function scaleDownCluster(){
- alert('Scale Down cluster successfully.');
- }
-  function scaleUpCluster(){
-  alert('Scale UP cluster successfully.');
- }
- 
 		  </script>
 		  
+
 </body>
 </html>
