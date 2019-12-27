@@ -27,6 +27,11 @@ def create_cluster():
     rack_members = cluster_data['rack_members']
     request_cpu = cluster_data['cpu']
     request_memory = cluster_data['memory']
+    with open('temp_service_acc.yml', 'r') as f, open('service_account.json','w') as json_out:
+        for i in yaml.safe_load_all(f):
+            if i['kind']=='ServiceAccount':
+                i['metadata']['name']=cluster_name+'-member'
+            json.dump(i, json_out, ensure_ascii=False,indent=2)
 
     with open('temp.yml', 'r') as f, open('sample.json','w') as json_out:
         for i in yaml.safe_load_all(f):
@@ -38,7 +43,7 @@ def create_cluster():
                 i['spec']['datacenter']['racks'][0]['resources']['requests']['cpu']=int(request_cpu)
                 i['spec']['datacenter']['racks'][0]['resources']['requests']['memory']=request_memory
             json.dump(i, json_out, ensure_ascii=False,indent=2)
-    resp = create_custom_resource_object(name_space, 'sample.json')
+    resp = create_custom_resource_object(name_space, 'sample.json', 'service_account.json')
     return jsonify({'result':resp})
 
 @app.route('/api/delete', methods=['DELETE'])
