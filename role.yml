@@ -1,0 +1,28 @@
+# Role for cassandra members.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: rook-cassandra-member
+  namespace: rook-cassandra
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - pods
+    verbs:
+      - get
+  - apiGroups:
+      - ""
+    resources:
+      - services
+    verbs:
+      - get
+      - list
+      - patch
+      - watch
+  - apiGroups:
+      - cassandra.rook.io
+    resources:
+      - clusters
+    verbs:
+      - get

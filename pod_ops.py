@@ -1,31 +1,129 @@
+import time
+import shutil
 import json
 import logging
+import logging.handlers
 import subprocess
 from kubernetes import client, config
 from kubernetes.client.rest import ApiException
+logger = logging.getLogger(__name__)
+file_handler = logging.FileHandler('%s' % 'pod_ops.log', 'w', 'utf-8')
+file_handler.setLevel(logging.DEBUG)
+file_format = logging.Formatter(
+    '%(asctime)s %(levelname)s: %(message)s: %(lineno)d in %(funcName)s]')
+file_handler.setFormatter(file_format)
+logger.addHandler(file_handler)
+console_handler = logging.StreamHandler()
+console_handler.setLevel(logging.INFO)
+console_format = logging.Formatter('%(message)s')
+console_handler.setFormatter(console_format)
+logger.addHandler(console_handler)
 
 
-def create_service_account(namespace, json_file_path):
-    service_accounts = get_service_accounts(namespace)
+def create_namespaced_role(namespace, r_json_path):
+    """Function to create cluster role"""
     config.load_kube_config()
-    #config.load_incluster_config()
+    # config.load_incluster_config()
+    configuration = client.Configuration()
+    logger.info("creating role")
+    api_instance = client.RbacAuthorizationV1Api(
+        client.ApiClient(configuration))
+    with open(r_json_path, 'r') as role_out:
+        body = json.load(role_out)
+    try:
+        logger.info("creating role .........")
+        api_response = api_instance.create_namespaced_role(namespace, body)
+        logger.info(
+            "role for cluster created successfully\n %s" %
+            api_response)
+    except ApiException as e:
+        logger.error("Failed to create namespaced role\n %s "%e)
+
+
+def create_namespaced_rolebinding(namespace, rb_json_path):
+    """
+    Function to create namespaced role binding for a cluster
+    """
+    # create an instance of the API class
+    config.load_kube_config()
+    # config.load_incluster_config()
+    configuration = client.Configuration()
+    api_instance = client.RbacAuthorizationV1Api(
+        client.ApiClient(configuration))
+    namespace = namespace  # str | object name and auth scope, such as for teams and projects
+    #body = client.V1RoleBinding()
+    with open(rb_json_path, 'r') as jsfile:
+        body = json.load(jsfile)
+    try:
+        logger.info("create namespaced rolebinding......")
+        api_instance.create_namespaced_role_binding(
+            namespace, body)
+        logger.info("rolebinding created successfully")
+    except ApiException as e:
+        logger.error(
+            "Exception when calling RbacAuthorizationV1Api->create_namespaced_role_binding\n: %s" %
+            e)
+
+
+def delete_namespaced_rolebinding(name, namespace):
+    config.load_kube_config()
+    # config.load_incluster_config()
+    configuration = client.Configuration()
+    api_instance = client.RbacAuthorizationV1Api(
+        client.ApiClient(configuration))
+    
+    grace_period_seconds = 56
+    
+    orphan_dependents = True
+    body = client.V1DeleteOptions()  # V1DeleteOptions |  (optional)
+
+    try:
+        api_instance.delete_namespaced_role_binding(
+            name,
+            namespace,
+            grace_period_seconds=grace_period_seconds,
+            orphan_dependents=orphan_dependents,
+            body=body)
+        logger.info("namespaced rolebinding deleted successfully")
+    except ApiException as e:
+        logger.error(
+            "Exception when calling RbacAuthorizationV1Api->delete_namespaced_role_binding: %s\n" %
+            e)
+
+
+def create_namespaced_service_account(namespace, json_file_path):
+    """
+    Function to create service account
+    """
+    #service_accounts = get_service_accounts(namespace)
+    config.load_kube_config()
+    # config.load_incluster_config()
     configuration = client.Configuration()
     api_instance = client.CoreV1Api(client.ApiClient(configuration))
-    with open(json_file_path,'r') as jfile:
+    #pretty = 'true'
+    with open(json_file_path, 'r') as jfile:
         body = json.load(jfile)
     try:
-        api_response = api_instance.create_namespaced_service_account(namespace, body)
-        return api_response
+        logger.info("creating service account.............")
+        api_instance.create_namespaced_service_account(
+            namespace, body)
+        logger.info("service account created successfully %s" % namespace)
     except ApiException as e:
-        return "Exception when calling CoreV1Api->create_namespaced_service_account: %s\n" % e
+        logger.error(
+            "Exception when calling CoreV1Api->create_namespaced_service_account: %s\n" %
+            e)
+
+
 def get_service_accounts(namespace):
     sas = []
     config.load_kube_config()
-    #config.load_incluster_config()
+    # config.load_incluster_config()
     configuration = client.Configuration()
     api_instance = client.CoreV1Api(client.ApiClient(configuration))
+    pretty = 'true'
     try:
-        api_response = api_instance.list_namespaced_service_account(namespace)
+        api_response = api_instance.list_namespaced_service_account(
+            namespace, pretty=pretty)
         for item in api_response.items:
             for secret in item.secrets:
                 sas.append(secret.name.split('-token')[0])
@@ -33,97 +131,159 @@ def get_service_accounts(namespace):
     except ApiException as e:
         return "Exception when calling CoreV1Api->create_namespaced_service_account: %s\n" % e
 
+
 def service_account_delete(service_acc_name, namespace):
+    # Function to delete service account
     config.load_kube_config()
-    #config.load_incluster_config()
+    # config.load_incluster_config()
     configuration = client.Configuration()
     api_instance = client.CoreV1Api(client.ApiClient(configuration))
+    pretty = 'true'
     try:
-        api_response = api_instance.delete_namespaced_service_account(service_acc_name, namespace)
-        return api_response
+        logger.info("deleting service account.......")
+        api_instance.delete_namespaced_service_account(
+            service_acc_name, namespace, pretty=pretty)
+        logger.info("service account deleted successfully")
     except ApiException as e:
-        return "Exception when calling CoreV1Api->create_namespaced_service_account: %s\n" % e
+        logger.error(
+            "Exception when calling CoreV1Api->create_namespaced_service_account: %s\n" %
+            e)
 
-def create_custom_resource_object(namespace,json_file_path, service_account_jpath):
+
+def create_custom_resource_object(
+        namespace,
+        json_file_path,
+        service_account_jpath, rb_json_path, r_json_path):
+    """
+    Function to create custom resource object
+    """
     config.load_kube_config()
-    #config.load_incluster_config()
+    # config.load_incluster_config()
     configuration = client.Configuration()
     api_instance = client.CustomObjectsApi(client.ApiClient(configuration))
-    group = 'cassandra.rook.io' # str | The custom resource's group name
-    version = 'v1alpha1' # str | The custom resource's version
-    plural = 'clusters' # str | The custom resource's plural name. For TPRs this would be lowercase plural kind.
+    group = 'cassandra.rook.io'  # str | The custom resource's group name
+    version = 'v1alpha1'  # str | The custom resource's version
+    # str | The custom resource's plural name. For TPRs this would be
+    # lowercase plural kind.
+    plural = 'clusters'
     pretty = 'true'
-    resp = create_service_account(namespace, service_account_jpath)
-    logging.info(resp)
-    with open(json_file_path,'r') as jfile:
+    with open(json_file_path, 'r') as jfile:
         data = json.load(jfile)
     try:
-        api_response = api_instance.create_namespaced_custom_object(group, version, namespace, plural,body=data, pretty=pretty)
+        create_namespaced_role(namespace, r_json_path)
+        create_namespaced_service_account(namespace, service_account_jpath)
+        create_namespaced_rolebinding(namespace, rb_json_path)
+        api_response = api_instance.create_namespaced_custom_object(
+            group, version, namespace, plural, body=data, pretty=pretty)
+        logging.info("New cassandra operator cluster created successfully")
         return api_response
     except ApiException as e:
-        return ("Exception when calling CustomObjectsApi->create_namespaced_custom_object: %s\n" % e)
+        logging.error(
+            "Exception when calling CustomObjectsApi->create_namespaced_custom_object: %s\n" %
+            e)
+
 
 def delete_custom_resource_object(cluster_name):
-    #config.load_incluster_config()
+    """
+    Function to delete custom resource object
+    """
+    # config.load_incluster_config()
     config.load_kube_config()
     configuration = client.Configuration()
     api_instance = client.CustomObjectsApi(client.ApiClient(configuration))
-    group = 'cassandra.rook.io' # str | The custom resource's group name
-    version = 'v1alpha1' # str | The custom resource's version
-    plural = 'clusters' # str | The custom resource's plural name. For TPRs this would be lowercase plural kind.
-    pretty = 'true'
+    group = 'cassandra.rook.io'  # str | The custom resource's group name
+    version = 'v1alpha1'  # str | The custom resource's version
+    # str | The custom resource's plural name. For TPRs this would be
+    # lowercase plural kind.
+    plural = 'clusters'
     name = cluster_name
     namespace = 'rook-cassandra'
+    grace_period_seconds = 56
+    orphan_dependents = True
     body = client.V1DeleteOptions()
-    
+
     try:
-        api_response = api_instance.delete_namespaced_custom_object(group, version, namespace, plural, name, body)
-        service_account_delete(name, namespace)
+        logger.info("deleting namespaced cutome object ......................")
+        api_response = api_instance.delete_namespaced_custom_object(
+            group,
+            version,
+            namespace,
+            plural,
+            name,
+            body,
+            grace_period_seconds=grace_period_seconds,
+            orphan_dependents=orphan_dependents)
+        logger.info("custom resource object deleted successfully")
+        service_account_name = name + "-member"
+        logger.info("deleting service account....................")
+        service_account_delete(service_account_name, namespace)
+        logger.info("service account successfully deleted")
+        delete_namespaced_rolebinding(service_account_name, namespace)
+        shutil.rmtree(cluster_name)
+        logger.info("namespaced rolebinding deleted successfully")
         return api_response
     except ApiException as e:
-        return ("Exception when calling CustomObjectsApi->delete_namespaced_custom_object: %s\n" % e)
+        logger.error(
+            "Exception when calling CustomObjectsApi->delete_namespaced_custom_object: %s\n" %
+            e)
+
+
 def get_pods_info(namespace):
+    """
+    Function to get pods status
+    """
     config.load_kube_config()
-    #config.load_incluster_config()
+    # config.load_incluster_config()
     configuration = client.Configuration()
     api_instance = client.CoreV1Api(client.ApiClient(configuration))
-    allow_watch_bookmarks = True 
-    field_selector = 'node_info'
-    label_selector = 'node_info'
     limit = 56
-    pretty='true'
+    pretty = 'true'
     all_pods = []
-    d1 = {}
+    pods = {}
     try:
-        api_response = api_instance.list_namespaced_pod(namespace, limit=limit, pretty=pretty)
+        api_response = api_instance.list_namespaced_pod(
+            namespace, limit=limit, pretty=pretty)
         for item in api_response.items:
-            d1['name']=item.metadata.name
-            d1['status']=item.status.phase
-            all_pods.append(d1.copy())
+            pods['name'] = item.metadata.name
+            pods['status'] = item.status.phase
+            all_pods.append(pods.copy())
         return all_pods
     except ApiException as e:
         return "Exception when calling CoreV1Api->list_node: %s\n" % e
+
+
 def get_clusters_info(namespace):
+    """
+    Function to get clusters info
+    """
     clusters_info = []
-    d1  = {}
+    clusters = {}
     config.load_kube_config()
-    #config.load_incluster_config()
+    # config.load_incluster_config()
     configuration = client.Configuration()
     api_instance = client.AppsV1beta2Api(client.ApiClient(configuration))
+    pretty = 'true'
     try:
-       api_response = api_instance.list_namespaced_stateful_set(namespace)
-       for cluster in api_response.items:
-           d1['name']=cluster.metadata.labels['cassandra.rook.io/cluster']
-           clusters_info.append(d1.copy())
-       return clusters_info
+        api_response = api_instance.list_namespaced_stateful_set(
+            namespace, pretty=pretty)
+        for cluster in api_response.items:
+            clusters['name'] = cluster.metadata.labels['cassandra.rook.io/cluster']
+            clusters_info.append(clusters.copy())
+        return clusters_info
     except ApiException as e:
-       return "Exception when calling AppsV1beta2Api->patch_namespaced_stateful_set_status: %s\n" % e
+        return "Exception when calling AppsV1beta2Api->patch_namespaced_stateful_set_status: %s\n" % e
 
-if __name__=="__main__":
-    #print(create_custom_resource_object('rook-cassandra','sample.json'))
-    #print(delete_custom_resource_object('rook-cassandra2'))
+
+if __name__ == "__main__":
+    # print(create_custom_resource_object('rook-cassandra','sample.json'))
+    # print(delete_custom_resource_object('rook-cassandra2'))
     namespace = 'rook-cassandra'
     #print(create_service_account(namespace, 'service_account.json'))
     name = 'rook-cassandra3-member'
-    print(service_account_delete(name, namespace))
-
+    print(
+        create_custom_resource_object(
+            namespace,
+            'crd.json',
+            'service_account.json',
+            'rolebinding.json',
+            'role.json'))

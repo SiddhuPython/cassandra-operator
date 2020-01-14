@@ -1,0 +1,15 @@
+# RoleBinding for cassandra members.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: rook-cassandra-member
+  namespace: rook-cassandra
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: rook-cassandra-member
+subjects:
+- kind: ServiceAccount
+  name: rook-cassandra-member
+  namespace: rook-cassandra
+
