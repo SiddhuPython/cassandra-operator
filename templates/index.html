@@ -198,9 +198,9 @@ var col = [];
 					}
 					var cn=clustersInfo[i][col[0]];
 					var td1 = document.createElement("td");
-					td1.innerHTML = '<button type="button" id="btndelete' + i +'" class="btn btn-default btn-xs" onclick="deleteCluster('+ i +')" >Delete </button>';
-						//+ '<button type="button" id="btnscaleup' + i +'" class="btn btn-default btn-xs" onclick="scaleUpCluster()" >Scale Up </button>'
-						//+'<button type="button" id="btnscaledown' + i +'" class="btn btn-default btn-xs" onclick="scaleDownCluster()" >Scale Down </button>'
+					td1.innerHTML = '<button type="button" id="btndelete' + i +'" class="btn btn-default btn-xs" onclick="deleteCluster('+ i +')" >Delete </button>'
+						+ '<button type="button" id="btnscaleup' + i +'" class="btn btn-default btn-xs" onclick="scaleUpCluster('+ i +')" >Scale Up </button>'
+						+'<button type="button" id="btnscaledown' + i +'" class="btn btn-default btn-xs" onclick="scaleDownCluster('+ i +')" >Scale Down </button>';
 					bRow.appendChild(td1);
 					
 					tBody.appendChild(bRow)
@@ -229,10 +229,10 @@ var clName=clustersInfo[pn][col[0]];
  }
  
  function scaleDownCluster(){
- alert('Scale Down cluster successfully.');
+	alert('Scaled Down cluster successfully.');
  }
   function scaleUpCluster(){
-  alert('Scale UP cluster successfully.');
+        alert('Scaled UP cluster successfully.');
  }
  
 		  </script>

@@ -2,7 +2,7 @@
 	"apiVersion": "cassandra.rook.io/v1alpha1",
 	"kind": "Cluster",
 	"metadata": {
-		"name": "rook-cassandra14",
+		"name": "rook-cassandra4",
 		"namespace": "rook-cassandra"
 	},
 	"spec": {
@@ -14,7 +14,7 @@
 			"racks": [
 				{
 					"name": "rc1",
-					"members": 1,
+					"members": 2,
 					"storage": {
 						"volumeClaimTemplates": [
 							{

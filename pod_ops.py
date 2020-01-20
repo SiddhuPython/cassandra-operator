@@ -1,9 +1,7 @@
-import time
 import shutil
 import json
 import logging
 import logging.handlers
-import subprocess
 from kubernetes import client, config
 from kubernetes.client.rest import ApiException
 logger = logging.getLogger(__name__)
@@ -34,10 +32,38 @@ def create_namespaced_role(namespace, r_json_path):
         logger.info("creating role .........")
         api_response = api_instance.create_namespaced_role(namespace, body)
         logger.info(
-            "role for cluster created successfully\n %s" %
-            api_response)
+            "role for cluster created successfully\n ")
     except ApiException as e:
-        logger.error("Failed to create namespaced role\n %s "%e)
+        logger.error("Failed to create namespaced role\n %s " % e)
+
+
+def delete_namespaced_role(cluster_name, namespace):
+    config.load_kube_config()
+    # config.load_incluster_config()
+    configuration = client.Configuration()
+    api_instance = client.RbacAuthorizationV1Api(
+        client.ApiClient(configuration))
+    name = cluster_name
+    pretty = 'true'
+    dry_run = 'All'
+    grace_period_seconds = 56
+    orphan_dependents = True
+    body = client.V1DeleteOptions()  # V1DeleteOptions |  (optional)
+    try:
+        logger.info("Deleting namespaced roles..........")
+        api_response = api_instance.delete_namespaced_role(
+            name,
+            namespace,
+            pretty=pretty,
+            dry_run=dry_run,
+            grace_period_seconds=grace_period_seconds,
+            orphan_dependents=orphan_dependents,
+            body=body)
+        logger.info("roles are deleted successfully")
+    except ApiException as e:
+        logger.error(
+            "Exception when calling RbacAuthorizationV1Api->delete_namespaced_role: %s\n" %
+            e)
 
 
 def create_namespaced_rolebinding(namespace, rb_json_path):
@@ -71,19 +97,34 @@ def delete_namespaced_rolebinding(name, namespace):
     configuration = client.Configuration()
     api_instance = client.RbacAuthorizationV1Api(
         client.ApiClient(configuration))
-    
-    grace_period_seconds = 56
-    
-    orphan_dependents = True
-    body = client.V1DeleteOptions()  # V1DeleteOptions |  (optional)
+    limit = 56
+    # str | If 'true', then the output is pretty printed. (optional)
+    pretty = 'true'
+    # bool | allowWatchBookmarks requests watch events with type \"BOOKMARK\".
+    # Servers that do not implement bookmarks may ignore this
+    allow_watch_bookmarks = True
 
+    dry_run = '- All'  # str | When present, indicates that modifications should not be persisted. An invalid or unrecognized dryRun directive will result in an err
+    # int | Timeout for the list/watch call. This limits the duration of the
+    # call, regardless of any activity or inactivity. (optional)
+    timeout_seconds = 56
+    watch = True  # bool | Watch for changes to the described resources and return them as a stream of add, update, and remove notifications. Specify resourceVersio
+    grace_period_seconds = 56
+    orphan_dependents = True
+    propagation_policy = 'Background'
+    body = client.V1DeleteOptions()  # V1DeleteOptions |  (optional)
     try:
-        api_instance.delete_namespaced_role_binding(
-            name,
-            namespace,
-            grace_period_seconds=grace_period_seconds,
-            orphan_dependents=orphan_dependents,
-            body=body)
+        logger.info("Namespaced deleting ............")
+        # api_instance.delete_namespaced_role_binding(
+        #    name,
+        #    namespace,
+        #    grace_period_seconds=grace_period_seconds,
+        #    dry_run=dry_run,
+        #    orphan_dependents=orphan_dependents,
+        #    propagation_policy=propagation_policy,
+        #    body=body)
+        api_response = api_instance.delete_collection_namespaced_role_binding(
+            namespace, pretty=pretty, limit=limit, timeout_seconds=timeout_seconds, watch=watch)
         logger.info("namespaced rolebinding deleted successfully")
     except ApiException as e:
         logger.error(
@@ -132,7 +173,7 @@ def get_service_accounts(namespace):
         return "Exception when calling CoreV1Api->create_namespaced_service_account: %s\n" % e
 
 
-def service_account_delete(service_acc_name, namespace):
+def delete_service_account(service_acc_name, namespace):
     # Function to delete service account
     config.load_kube_config()
     # config.load_incluster_config()
@@ -183,6 +224,29 @@ def create_custom_resource_object(
             e)
 
 
+def update_cluster(name, namespace, crd_path):
+    config.load_kube_config()
+    configuration = client.Configuration()
+    api_instance = client.CustomObjectsApi(client.ApiClient(configuration))
+    plural = 'clusters'
+    group = 'cassandra.rook.io'
+    version = 'v1alpha1'
+    pretty = 'true'
+    logging.info(crd_path)
+    with open(crd_path, 'r') as jfile:
+        body = json.load(jfile)
+    try:
+        # api_response = api_instance.create_namespaced_custom_object(
+        #    group, version, namespace, plural, body=data, pretty=pretty)
+        import pdb;pdb.set_trace()
+        api_response = api_instance.replace_namespaced_custom_object(group, version, namespace, plural, name, body)
+        #api_response = api_instance.replace_namespaced_custom_object(
+        #    group, version, namespace, plural, name, body)
+        return api_response
+    except ApiException as e:
+        logging.error("Failed to scaleup/scaledown resource")
+
+
 def delete_custom_resource_object(cluster_name):
     """
     Function to delete custom resource object
@@ -193,8 +257,6 @@ def delete_custom_resource_object(cluster_name):
     api_instance = client.CustomObjectsApi(client.ApiClient(configuration))
     group = 'cassandra.rook.io'  # str | The custom resource's group name
     version = 'v1alpha1'  # str | The custom resource's version
-    # str | The custom resource's plural name. For TPRs this would be
-    # lowercase plural kind.
     plural = 'clusters'
     name = cluster_name
     namespace = 'rook-cassandra'
@@ -203,7 +265,7 @@ def delete_custom_resource_object(cluster_name):
     body = client.V1DeleteOptions()
 
     try:
-        logger.info("deleting namespaced cutome object ......................")
+        logger.info("deleting namespaced custom object ......................")
         api_response = api_instance.delete_namespaced_custom_object(
             group,
             version,
@@ -213,17 +275,16 @@ def delete_custom_resource_object(cluster_name):
             body,
             grace_period_seconds=grace_period_seconds,
             orphan_dependents=orphan_dependents)
+        logger.info(api_response)
         logger.info("custom resource object deleted successfully")
         service_account_name = name + "-member"
-        logger.info("deleting service account....................")
-        service_account_delete(service_account_name, namespace)
-        logger.info("service account successfully deleted")
+        delete_namespaced_role(service_account_name, namespace)
+        delete_service_account(service_account_name, namespace)
         delete_namespaced_rolebinding(service_account_name, namespace)
         shutil.rmtree(cluster_name)
-        logger.info("namespaced rolebinding deleted successfully")
         return api_response
     except ApiException as e:
-        logger.error(
+        return(
             "Exception when calling CustomObjectsApi->delete_namespaced_custom_object: %s\n" %
             e)
 
@@ -249,7 +310,7 @@ def get_pods_info(namespace):
             all_pods.append(pods.copy())
         return all_pods
     except ApiException as e:
-        return "Exception when calling CoreV1Api->list_node: %s\n" % e
+        logger.error("Exception when calling CoreV1Api->list_node: %s\n" % e)
 
 
 def get_clusters_info(namespace):
@@ -259,7 +320,6 @@ def get_clusters_info(namespace):
     clusters_info = []
     clusters = {}
     config.load_kube_config()
-    # config.load_incluster_config()
     configuration = client.Configuration()
     api_instance = client.AppsV1beta2Api(client.ApiClient(configuration))
     pretty = 'true'
@@ -271,19 +331,13 @@ def get_clusters_info(namespace):
             clusters_info.append(clusters.copy())
         return clusters_info
     except ApiException as e:
-        return "Exception when calling AppsV1beta2Api->patch_namespaced_stateful_set_status: %s\n" % e
+        return(
+            "Exception when calling AppsV1beta2Api->patch_namespaced_stateful_set_status: %s\n" %
+            e)
 
-
-if __name__ == "__main__":
-    # print(create_custom_resource_object('rook-cassandra','sample.json'))
-    # print(delete_custom_resource_object('rook-cassandra2'))
+if __name__=="__main__":
+    name = 'rook-cassandra4-member'
     namespace = 'rook-cassandra'
-    #print(create_service_account(namespace, 'service_account.json'))
-    name = 'rook-cassandra3-member'
-    print(
-        create_custom_resource_object(
-            namespace,
-            'crd.json',
-            'service_account.json',
-            'rolebinding.json',
-            'role.json'))
+    crd_path = 'rook-cassandra4/crd.json'
+    update_cluster(name, namespace, crd_path)
+

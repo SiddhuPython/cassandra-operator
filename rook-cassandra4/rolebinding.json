@@ -1,0 +1,20 @@
+{
+	"apiVersion": "rbac.authorization.k8s.io/v1",
+	"kind": "RoleBinding",
+	"metadata": {
+		"name": "rook-cassandra4-member",
+		"namespace": "rook-cassandra"
+	},
+	"roleRef": {
+		"apiGroup": "rbac.authorization.k8s.io",
+		"kind": "Role",
+		"name": "rook-cassandra4-member"
+	},
+	"subjects": [
+		{
+			"kind": "ServiceAccount",
+			"name": "rook-cassandra4-member",
+			"namespace": "rook-cassandra"
+		}
+	]
+}
