@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>CASSKOP</title>
+    <link rel="stylesheet" href="static/style.css">
+	  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+</head>
+<body onload="getValue()">
+    
+   <header>
+   <img src="static/xor.jpg" style="width:70px;height:70px;" align="left">
+		<div class="grid">
+			<h1 style="color:white;"><b>
+				Cassandra as a service on Kubernates 
+				</b>
+			</h1>
+		</div>
+	
+	</header>
+	<section class="body">
+	
+		<div class="grid tCenter">
+			
+			<button id="btn" class="btn btn-secondary pull-right">Launch New Cluster</button>
+			
+			<h3>List of Clusters</h3>
+		</div>
+		
+	&nbsp;
+	<style>
+table, th, td {
+  border: 2px solid black; width: 700px;
+}
+</style>
+		
+		<div class="grid tCenter">
+			<!-- Div element to display result -->
+				<div id="clustersInfo">
+					<p>You have zero clusters</p>
+				</div>
+		</div>
+	</section>
+
+
+	<footer>
+		<div class="grid">
+		<p><b>
+			Coyright@Xoriant.com
+			</b>
+		</p>
+		</div>
+	</footer>
+
+   <div class="model-section">
+    <div class="model">
+     <div class="model--header">
+     <h3>ENTER CLUSTER DETAILS </h3>
+     <span id="close">&times;</span>
+     </div>
+     <!-- Close model--header -->
+     <div class="model--body">
+         <div class="container">
+  <h3>Create New Cluster</h3>
+  <form style="border: 1px solid darkblack;width: 400px; padding: 20px;" >
+    
+	<div class="form-group">
+	 <label for="cluster_name">Cluster Name:</label>
+      <input type="text" class="form-control" style="width: 300px;" id="cluster_name" placeholder="Enter cluster name" name="cluster_name">
+        <label for="data_center">Data Center Name:</label>
+      <input type="text" class="form-control" style="width: 300px;" id="data_center" placeholder="Enter data center name" name="data_center">
+         <label for="data_center">Namespace Name:</label>
+      <input type="text" class="form-control" style="width: 300px;" id="name_space" placeholder="Enter Namespace name" name="name_space">
+    <label for="data_center">Rack Name:</label>
+      <input type="text" class="form-control" style="width: 300px;" id="rack_name" placeholder="Enter Rack name" name="rack_name">
+    <label for="data_center">Rack member:</label>
+      <input type="text" class="form-control" style="width: 300px;" id="rack_member" placeholder="Enter Rack member" name="rack_member">
+       <label for="data_center">CPU:</label>
+      <input type="text" class="form-control" style="width: 300px;" id="cpu" placeholder="Enter cpu" name="cpu">
+       <label for="data_center">Memory:</label>
+      <input type="text" class="form-control" style="width: 300px;" id="memory" placeholder="Enter memory" name="memory">
+    </div>
+    <button style="background-color:lightgrey" type="button" onClick="showTableData()" class="btn btn-default">Submit</button>
+  </form>
+</div>
+     </div>
+    </div>
+    <!-- Close model -->
+   </div>
+   <!-- Close model-section -->
+
+<script>const btn = document.getElementById("btn");
+    const model = document.querySelector(".model-section");
+    const close = document.getElementById("close");
+          btn.addEventListener("click", function(){
+              model.style.display = "block";
+          });
+    
+          close.addEventListener("click", function(){
+              model.style.display = "none";
+          });
+    
+          model.addEventListener("click", function(e){
+            let className = e.target.getAttribute("class");
+            if(className === "model-section"){
+                model.style.display = "none";
+            }
+          });
+		  
+function showTableData() {
+ var clusterName=document.getElementById('cluster_name').value;
+ var dataCenter=document.getElementById('data_center').value;
+ var nameSpace=document.getElementById('name_space').value;
+ var rackName=document.getElementById('rack_name').value;
+ var rackMembers=document.getElementById('rack_member').value;
+ var cpu=document.getElementById('cpu').value;
+ var memory=document.getElementById('memory').value;
+ var url='http://127.0.0.1:8080/api/resource'
+	fetch(url, {
+  method: 'post',
+  headers: {
+    'Accept': 'application/json, text/plain, */*',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({'cluster_name':clusterName, 'data_center_name': dataCenter, 'name_space': nameSpace, 'rack_name' : rackName, 'rack_members'
+  :rackMembers, 'cpu':cpu, 'memory':memory})
+}).then(res=>res.json())
+  .then(res => console.log(res));
+  model.style.display = "none";
+location.reload(); 
+};
+
+function updateClusterTable(){
+
+ var clusterName=document.getElementById('cluster_name').value;
+
+ var nameSpace=document.getElementById('name_space').value;
+
+ var rackName=document.getElementById('rack_name').value;
+
+ var operation=document.getElementById('operation').value;
+
+ var url='http://127.0.0.1:8080/api/resource'
+
+	fetch(url, {
+
+  method: 'put',
+
+  headers: {
+
+    'Accept': 'application/json, text/plain, */*',
+
+    'Content-Type': 'application/json'
+
+  },
+
+  body: JSON.stringify({'cluster_name':clusterName, 'name_space': nameSpace, 'rack_name' : rackName, 'rack_members'
+
+  :rackMembers, 'operation':operation})
+
+}).then(res=>res.json())
+
+  .then(res => console.log(res));
+
+  model.style.display = "none";
+
+location.reload(); 
+
+};
+
+var clustersInfo = '';
+var col = [];
+	function getValue(){
+	const Http = new XMLHttpRequest();
+	Http.open("GET", "http://127.0.0.1:8080/api/cluster_info?namespace=rook-cassandra");
+	Http.send();
+	Http.onreadystatechange = (e) => {
+	var jsonstr=JSON.parse(Http.responseText);
+	clustersInfo=jsonstr["cluster_info"];
+	var noOfContacts = clustersInfo.length;
+		if(noOfContacts>0){
+			
+
+			// CREATE DYNAMIC TABLE.
+			var table = document.createElement("table");
+			table.style.width = '50%';
+			table.setAttribute('border', '1');
+			table.setAttribute('cellspacing', '0');
+			table.setAttribute('cellpadding', '5');
+			
+			// retrieve column header ('Name', 'Email', and 'Mobile')
+
+			var colName = ["Cluster Name","Action"]; // define an empty array
+			
+			for (var i = 0; i < noOfContacts; i++) {
+				for (var key in clustersInfo[i]) {
+					if (col.indexOf(key) === -1) {
+						col.push(key);
+					}
+				}
+			}
+			
+			// CREATE TABLE HEAD .
+			var tHead = document.createElement("thead");	
+				
+			
+			// CREATE ROW FOR TABLE HEAD .
+			var hRow = document.createElement("tr");
+			
+			// ADD COLUMN HEADER TO ROW OF TABLE HEAD.
+			for (var i = 0; i < colName.length; i++) {
+					var th = document.createElement("th");
+					th.innerHTML = colName[i];
+					hRow.appendChild(th);
+			}
+			tHead.appendChild(hRow);
+			table.appendChild(tHead);
+			
+			// CREATE TABLE BODY .
+			var tBody = document.createElement("tbody");	
+			
+			// ADD COLUMN HEADER TO ROW OF TABLE HEAD.
+			for (var i = 0; i < noOfContacts; i++) {
+			
+					var bRow = document.createElement("tr"); // CREATE ROW FOR EACH RECORD .
+					
+					
+					for (var j = 0; j < col.length; j++) {
+						var td = document.createElement("td");
+						td.innerHTML = clustersInfo[i][col[j]];
+						bRow.appendChild(td);
+					}
+					var cn=clustersInfo[i][col[0]];
+					var td1 = document.createElement("td");
+					td1.innerHTML = '<button type="button" id="btndelete' + i +'" class="btn btn-default btn-xs" onclick="deleteCluster('+ i +')" >Delete </button>'
+						+ '<button type="button" id="btnscaleup' + i +'" class="btn btn-default btn-xs" onclick="scaleUpCluster('+ i +')" >Scale Up </button>'
+						+'<button type="button" id="btnscaledown' + i +'" class="btn btn-default btn-xs" onclick="scaleDownCluster('+ i +')" >Scale Down </button>';
+					bRow.appendChild(td1);
+					
+					tBody.appendChild(bRow)
+
+			}
+			table.appendChild(tBody);	
+			
+			
+			// FINALLY ADD THE NEWLY CREATED TABLE WITH JSON DATA TO A CONTAINER.
+			var divContainer = document.getElementById("clustersInfo");
+			divContainer.innerHTML = "";
+			divContainer.appendChild(table);
+			
+		}	
+	}
+
+}
+ function deleteCluster(pn){
+var clName=clustersInfo[pn][col[0]];
+
+	const Http = new XMLHttpRequest();
+	Http.open("DELETE", "http://127.0.0.1:8080/api/delete?cluster_name="+clName);
+	Http.send();
+	location.reload(); 
+ 	alert('Cluster "'+clName+'" deleted successfully.');
+ }
+ 
+ function scaleDownCluster(){
+	alert('Scaled Down cluster successfully.');
+ }
+  function scaleUpCluster(){
+        alert('Scaled UP cluster successfully.');
+ }
+ 
+		  </script>
+		  
+</body>
+</html>

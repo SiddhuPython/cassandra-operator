@@ -20,6 +20,14 @@ body {
     border: none;
 }
 
+#btnscaleUpClose {
+    display: block;
+    font-size: 25px;
+    float: right;
+    margin-top: -25px;
+    cursor: pointer;
+}
+
 .model-section {
     position: fixed;
     top: 0;

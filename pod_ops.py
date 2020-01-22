@@ -17,7 +17,6 @@ console_format = logging.Formatter('%(message)s')
 console_handler.setFormatter(console_format)
 logger.addHandler(console_handler)
 
-
 def create_namespaced_role(namespace, r_json_path):
     """Function to create cluster role"""
     config.load_kube_config()
@@ -98,15 +97,10 @@ def delete_namespaced_rolebinding(name, namespace):
     api_instance = client.RbacAuthorizationV1Api(
         client.ApiClient(configuration))
     limit = 56
-    # str | If 'true', then the output is pretty printed. (optional)
     pretty = 'true'
-    # bool | allowWatchBookmarks requests watch events with type \"BOOKMARK\".
-    # Servers that do not implement bookmarks may ignore this
     allow_watch_bookmarks = True
 
     dry_run = '- All'  # str | When present, indicates that modifications should not be persisted. An invalid or unrecognized dryRun directive will result in an err
-    # int | Timeout for the list/watch call. This limits the duration of the
-    # call, regardless of any activity or inactivity. (optional)
     timeout_seconds = 56
     watch = True  # bool | Watch for changes to the described resources and return them as a stream of add, update, and remove notifications. Specify resourceVersio
     grace_period_seconds = 56
@@ -115,14 +109,6 @@ def delete_namespaced_rolebinding(name, namespace):
     body = client.V1DeleteOptions()  # V1DeleteOptions |  (optional)
     try:
         logger.info("Namespaced deleting ............")
-        # api_instance.delete_namespaced_role_binding(
-        #    name,
-        #    namespace,
-        #    grace_period_seconds=grace_period_seconds,
-        #    dry_run=dry_run,
-        #    orphan_dependents=orphan_dependents,
-        #    propagation_policy=propagation_policy,
-        #    body=body)
         api_response = api_instance.delete_collection_namespaced_role_binding(
             namespace, pretty=pretty, limit=limit, timeout_seconds=timeout_seconds, watch=watch)
         logger.info("namespaced rolebinding deleted successfully")
@@ -217,6 +203,7 @@ def create_custom_resource_object(
         api_response = api_instance.create_namespaced_custom_object(
             group, version, namespace, plural, body=data, pretty=pretty)
         logging.info("New cassandra operator cluster created successfully")
+
         return api_response
     except ApiException as e:
         logging.error(
@@ -236,12 +223,7 @@ def update_cluster(name, namespace, crd_path):
     with open(crd_path, 'r') as jfile:
         body = json.load(jfile)
     try:
-        # api_response = api_instance.create_namespaced_custom_object(
-        #    group, version, namespace, plural, body=data, pretty=pretty)
-        import pdb;pdb.set_trace()
-        api_response = api_instance.replace_namespaced_custom_object(group, version, namespace, plural, name, body)
-        #api_response = api_instance.replace_namespaced_custom_object(
-        #    group, version, namespace, plural, name, body)
+        api_response = api_instance.patch_namespaced_custom_object(group, version, namespace, plural, name, body)
         return api_response
     except ApiException as e:
         logging.error("Failed to scaleup/scaledown resource")
@@ -289,7 +271,7 @@ def delete_custom_resource_object(cluster_name):
             e)
 
 
-def get_pods_info(namespace):
+def get_pods_info(namespace, cluster_name):
     """
     Function to get pods status
     """
@@ -305,9 +287,15 @@ def get_pods_info(namespace):
         api_response = api_instance.list_namespaced_pod(
             namespace, limit=limit, pretty=pretty)
         for item in api_response.items:
-            pods['name'] = item.metadata.name
-            pods['status'] = item.status.phase
-            all_pods.append(pods.copy())
+            if cluster_name+'-' in item.metadata.name:
+                pods['name'] = item.metadata.name
+                pods['status'] = item.status.conditions[0].status
+                if  pods['status']:
+                    msg = "pod created successfully"
+                else:
+                    msg = item.status.conditions[0].message
+                pods['msg'] = msg
+                all_pods.append(pods.copy())
         return all_pods
     except ApiException as e:
         logger.error("Exception when calling CoreV1Api->list_node: %s\n" % e)
@@ -335,9 +323,4 @@ def get_clusters_info(namespace):
             "Exception when calling AppsV1beta2Api->patch_namespaced_stateful_set_status: %s\n" %
             e)
 
-if __name__=="__main__":
-    name = 'rook-cassandra4-member'
-    namespace = 'rook-cassandra'
-    crd_path = 'rook-cassandra4/crd.json'
-    update_cluster(name, namespace, crd_path)
 

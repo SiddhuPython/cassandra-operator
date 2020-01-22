@@ -2,7 +2,7 @@
 	"apiVersion": "v1",
 	"kind": "ServiceAccount",
 	"metadata": {
-		"name": "rook-cassandra4-member",
+		"name": "rook-cassandra3-member",
 		"namespace": "rook-cassandra"
 	}
 }

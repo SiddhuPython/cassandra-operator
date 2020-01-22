@@ -25,7 +25,6 @@ def cluster_info():
         return jsonify({"cluster_info": cluster_info})
     return jsonify({"Error": "Please enter proper informations"})
 
-
 @app.route('/api/resource', methods=['POST'])
 def create_cluster():
     cluster_data = request.get_json()
@@ -82,10 +81,11 @@ def create_cluster():
         SA_PATH,
         ROLEBINDING_PATH,
         ROLE_PATH)
+    #pods_status = get_pods_info(name_space, cluster_name)
     return jsonify({'result': resp})
 
 
-@app.route('/api/update', methods=['UPDATE'])
+@app.route('/api/update', methods=['PUT'])
 def scaleup_scaledown():
     cluster_data = request.get_json()
     cluster_name = cluster_data['cluster_name']
@@ -97,14 +97,15 @@ def scaleup_scaledown():
         json_data = json.load(jfile)
         current_pod_count = json_data['spec']['datacenter']['racks'][0]['members']
         logging.info(current_pod_count)
-        if (operation == 'scale_up' and current_pod_count < rack_members)or(
-                operation == 'scale_down' and current_pod_count > rack_members):
+        if (operation == 'scale-up' and current_pod_count < rack_members)or(
+                operation == 'scale-down' and current_pod_count > rack_members):
             json_data['spec']['datacenter']['racks'][0]['members'] = rack_members
         else:
             logging.info("No action required")
     with open(CRD_PATH, 'w') as jfile:
         json.dump(json_data, jfile, indent="\t")
     resp = update_cluster(cluster_name, name_space, CRD_PATH)
+    #pods_status = get_pods_info(name_space, cluster_name)
     return jsonify({'result': resp})
 
 

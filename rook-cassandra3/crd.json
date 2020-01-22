@@ -2,7 +2,7 @@
 	"apiVersion": "cassandra.rook.io/v1alpha1",
 	"kind": "Cluster",
 	"metadata": {
-		"name": "rook-cassandra4",
+		"name": "rook-cassandra3",
 		"namespace": "rook-cassandra"
 	},
 	"spec": {
@@ -10,10 +10,10 @@
 		"mode": "cassandra",
 		"annotations": null,
 		"datacenter": {
-			"name": "dc1",
+			"name": "dc3",
 			"racks": [
 				{
-					"name": "rc1",
+					"name": "rc3",
 					"members": 2,
 					"storage": {
 						"volumeClaimTemplates": [

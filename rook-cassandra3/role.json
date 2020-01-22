@@ -2,7 +2,7 @@
 	"apiVersion": "rbac.authorization.k8s.io/v1",
 	"kind": "Role",
 	"metadata": {
-		"name": "rook-cassandra4-member",
+		"name": "rook-cassandra3-member",
 		"namespace": "rook-cassandra"
 	},
 	"rules": [
